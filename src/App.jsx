@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
 import { Trash2, Clock, Calendar, CheckCircle2, Circle, Plus, GripVertical } from 'lucide-react';
-// Drag and Drop Imports
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -14,7 +13,8 @@ function SortableRow({ t, updateTaskField, cyclePriority, deleteTask, getTimeLef
     transform: CSS.Transform.toString(transform),
     transition,
     zIndex: isDragging ? 100 : 1,
-    opacity: isDragging ? 0.5 : 1,
+    opacity: isDragging ? 0.6 : 1,
+    position: 'relative'
   };
 
   const isDone = t.status === 'Completed';
@@ -23,11 +23,12 @@ function SortableRow({ t, updateTaskField, cyclePriority, deleteTask, getTimeLef
 
   return (
     <tr ref={setNodeRef} style={style} className="group hover:bg-white/[0.02] transition-colors bg-[#1a1a1a]">
-      {/* DRAG HANDLE */}
+      {/* DRAG HANDLE (GRAB) */}
       <td className="py-4 px-4 text-center cursor-grab active:cursor-grabbing" {...attributes} {...listeners}>
         <GripVertical size={20} className="text-slate-800 group-hover:text-slate-600 mx-auto" />
       </td>
       
+      {/* DONE COLUMN */}
       <td className="py-4 px-4 text-center">
         <button onClick={() => updateTaskField(t.id, 'status', isDone ? 'To Do' : 'Completed')}>
           {isDone ? 
@@ -36,6 +37,8 @@ function SortableRow({ t, updateTaskField, cyclePriority, deleteTask, getTimeLef
           }
         </button>
       </td>
+
+      {/* TASK NAME */}
       <td className="py-4 px-4">
         <input 
           className={`bg-transparent border-none outline-none text-xl font-bold w-full transition-all ${isDone ? 'line-through text-slate-700' : 'text-slate-200 focus:text-blue-500'}`}
@@ -43,9 +46,13 @@ function SortableRow({ t, updateTaskField, cyclePriority, deleteTask, getTimeLef
           onChange={(e) => updateTaskField(t.id, 'name', e.target.value)}
         />
       </td>
-      <td className="py-4 px-4 text-xs font-black uppercase text-slate-700 tracking-widest">
+
+      {/* STATUS */}
+      <td className="py-4 px-4 text-[10px] font-black uppercase text-slate-700 tracking-widest">
         {t.status}
       </td>
+
+      {/* PRIORITY CLICK-TO-CYCLE */}
       <td className="py-4 px-4">
         <button 
           onClick={() => cyclePriority(t.id, p)}
@@ -59,12 +66,16 @@ function SortableRow({ t, updateTaskField, cyclePriority, deleteTask, getTimeLef
           ● {p}
         </button>
       </td>
+
+      {/* TIME LEFT (COLOR LOGIC) */}
       <td className="py-4 px-4">
         <div className={`flex items-center gap-2 font-bold text-xs uppercase italic tracking-tighter ${time.color}`}>
           <Clock size={14} strokeWidth={3} />
           {time.text}
         </div>
       </td>
+
+      {/* DATE PICKER */}
       <td className="py-4 px-4">
         <div className="flex items-center gap-3 bg-[#222] px-4 py-2 rounded-xl border border-white/5 w-fit shadow-inner">
           <Calendar size={14} className="text-slate-600" />
@@ -76,6 +87,8 @@ function SortableRow({ t, updateTaskField, cyclePriority, deleteTask, getTimeLef
           />
         </div>
       </td>
+
+      {/* DELETE ACTION */}
       <td className="py-4 px-4 text-right">
         <button onClick={() => deleteTask(t.id)} className="p-2 text-slate-800 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
           <Trash2 size={20} />
@@ -85,7 +98,7 @@ function SortableRow({ t, updateTaskField, cyclePriority, deleteTask, getTimeLef
   );
 }
 
-// --- MAIN APP ---
+// --- MAIN APP COMPONENT ---
 export default function App() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -106,18 +119,20 @@ export default function App() {
   }
 
   const getTimeLeft = (deadline, isDone) => {
-    if (isDone) return { text: "Done", color: "text-slate-600 font-bold" };
-    if (!deadline) return { text: "No Date", color: "text-blue-500/40" };
+    if (isDone) return { text: "DONE", color: "text-slate-600 font-bold" };
+    if (!deadline) return { text: "NO DATE", color: "text-blue-500/40" };
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const target = new Date(deadline);
     const diffTime = target - today;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    if (diffDays < 0) return { text: "Overdue", color: "text-[#ff0000] font-black animate-pulse" };
-    if (diffDays === 0) return { text: "Today", color: "text-red-400 font-bold" };
-    if (diffDays < 5) return { text: `${diffDays} Days`, color: "text-red-400/80" };
-    if (diffDays < 10) return { text: `${diffDays} Days`, color: "text-yellow-400" };
-    return { text: `${diffDays} Days`, color: "text-emerald-500" };
+    
+    if (diffDays < 0) return { text: "OVERDUE", color: "text-[#ff0000] font-black animate-pulse" };
+    if (diffDays === 0) return { text: "TODAY", color: "text-red-400 font-bold" };
+    if (diffDays < 5) return { text: `${diffDays} DAYS`, color: "text-red-400/80" };
+    if (diffDays < 10) return { text: `${diffDays} DAYS`, color: "text-yellow-400" };
+    return { text: `${diffDays} DAYS`, color: "text-emerald-500" };
   };
 
   const updateTaskField = async (id, field, value) => {
@@ -153,18 +168,17 @@ export default function App() {
         const newIndex = items.findIndex((i) => i.id === over.id);
         return arrayMove(items, oldIndex, newIndex);
       });
-      // Note: In a real DB, you'd save the new 'position' index here.
     }
   };
 
-  if (loading) return <div className="bg-[#1a1a1a] min-h-screen text-white p-10 font-bold text-2xl uppercase italic">Syncing...</div>;
+  if (loading) return <div className="bg-[#1a1a1a] min-h-screen text-white p-10 font-bold text-2xl uppercase italic tracking-tighter">Syncing Cloud...</div>;
 
   return (
     <div className="min-h-screen w-full bg-[#1a1a1a] text-slate-300 p-8 md:p-14 font-sans select-none">
       <div className="w-full mb-12 flex justify-between items-center border-b border-white/5 pb-8">
         <div>
           <h1 className="text-7xl font-black text-white mb-2 italic tracking-tighter uppercase">To-Do List</h1>
-          <p className="text-slate-600 font-bold uppercase tracking-[0.4em] text-xs">Drag to Rearrange</p>
+          <p className="text-slate-600 font-bold uppercase tracking-[0.4em] text-xs">Auto-Saving Enabled</p>
         </div>
         <button onClick={addTask} className="bg-blue-600 hover:bg-blue-500 text-white p-5 rounded-2xl transition-all active:scale-90 shadow-lg shadow-blue-600/20">
           <Plus size={32} strokeWidth={4} />
@@ -176,13 +190,13 @@ export default function App() {
           <table className="w-full text-left border-separate border-spacing-y-2 table-fixed">
             <thead>
               <tr className="text-slate-700 text-xs font-black uppercase tracking-[0.25em]">
-                <th className="px-4 pb-4 w-16 text-center italic">Grab</th>
-                <th className="px-4 pb-4 w-20 text-center">Done</th>
-                <th className="px-4 pb-4 w-1/3">Task</th>
-                <th className="px-4 pb-4 w-32">Status</th>
-                <th className="px-4 pb-4 w-44 text-center">Priority</th>
-                <th className="px-4 pb-4 w-32">Time Left</th>
-                <th className="px-4 pb-4 w-48">Date</th>
+                <th className="px-4 pb-4 w-16"></th>
+                <th className="px-4 pb-4 w-20"></th>
+                <th className="px-4 pb-4 w-1/3 text-slate-500">TASKS</th>
+                <th className="px-4 pb-4 w-32">STATUS</th>
+                <th className="px-4 pb-4 w-44 text-center">PRIORITY</th>
+                <th className="px-4 pb-4 w-32">TIME LEFT</th>
+                <th className="px-4 pb-4 w-48">DATE</th>
                 <th className="px-4 pb-4 w-16"></th>
               </tr>
             </thead>
