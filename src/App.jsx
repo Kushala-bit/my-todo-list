@@ -127,7 +127,7 @@ export default function App() {
     <div className="min-h-screen w-full bg-[#1a1a1a] text-slate-300 p-4 md:p-14 font-sans select-none">
       <div className="w-full mb-8 flex justify-between items-end border-b border-white/5 pb-8">
         <div>
-          <h1 className="text-5xl md:text-7xl font-black text-white italic tracking-tighter uppercase leading-none">Focus</h1>
+          <h1 className="text-5xl md:text-7xl font-black text-white italic tracking-tighter uppercase leading-none">W I Q</h1>
           <div className="flex gap-4 mt-6">
             <button onClick={() => setActiveTab('tasks')} className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-[10px] transition-all ${activeTab === 'tasks' ? 'bg-blue-600 text-white' : 'bg-white/5 text-slate-500'}`}><ListTodo size={14} /> TASKS</button>
             <button onClick={() => setActiveTab('study')} className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-[10px] transition-all ${activeTab === 'study' ? 'bg-purple-600 text-white shadow-lg' : 'bg-white/5 text-slate-500'}`}><GraduationCap size={14} /> STUDY DASHBOARD</button>
