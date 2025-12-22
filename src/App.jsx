@@ -121,7 +121,7 @@ export default function App() {
       {/* HEADER SECTION */}
       <div className="w-full mb-8 flex justify-between items-end border-b border-white/5 pb-8">
         <div>
-          <h1 className="text-5xl md:text-7xl font-black text-white italic tracking-tighter uppercase leading-none">Focus</h1>
+          <h1 className="text-5xl md:text-7xl font-black text-white italic tracking-tighter uppercase leading-none">WIQ</h1>
           <div className="flex gap-4 mt-6">
             <button onClick={() => setActiveTab('tasks')} className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-[10px] transition-all ${activeTab === 'tasks' ? 'bg-blue-600 text-white' : 'bg-white/5 text-slate-500 hover:bg-white/10'}`}>
               <ListTodo size={14} /> TASKS
@@ -137,7 +137,7 @@ export default function App() {
       {activeTab === 'tasks' && (
         <div className="w-full">
            <div className="flex justify-between items-center mb-6">
-             <h2 className="text-xs font-black text-slate-500 tracking-[0.3em] uppercase">Daily Objectives</h2>
+             <h2 className="text-xs font-black text-slate-500 tracking-[0.3em] uppercase">To-Do List</h2>
              <button onClick={addTask} className="bg-blue-600 text-white p-3 rounded-xl active:scale-90 transition-transform"><Plus size={24} strokeWidth={4} /></button>
            </div>
            <div className="overflow-x-auto">
