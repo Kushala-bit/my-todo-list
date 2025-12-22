@@ -6,7 +6,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSo
 import { CSS } from '@dnd-kit/utilities';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
-// --- SORTABLE ROW (LOCKED) ---
+// --- SORTABLE ROW (UPDATED FOR MOBILE VISIBILITY) ---
 function SortableRow({ t, updateTaskField, cyclePriority, deleteTask, getTimeLeft }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: t.id });
   const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 100 : 1, opacity: isDragging ? 0.6 : 1 };
@@ -22,7 +22,13 @@ function SortableRow({ t, updateTaskField, cyclePriority, deleteTask, getTimeLef
           {isDone ? <CheckCircle2 size={24} className="text-white mx-auto" strokeWidth={3} /> : <Circle size={24} className="text-slate-800 hover:text-slate-600 mx-auto" strokeWidth={3} />}
         </button>
       </td>
-      <td className="py-4 px-2"><input className={`bg-transparent border-none outline-none text-lg md:text-xl font-bold w-full ${isDone ? 'line-through text-slate-700' : 'text-slate-200 focus:text-blue-500'}`} value={t.name} onChange={(e) => updateTaskField(t.id, 'name', e.target.value)} /></td>
+      <td className="py-4 px-2">
+        <input className={`bg-transparent border-none outline-none text-lg md:text-xl font-bold w-full ${isDone ? 'line-through text-slate-700' : 'text-slate-200 focus:text-blue-500'}`} value={t.name} onChange={(e) => updateTaskField(t.id, 'name', e.target.value)} />
+        {/* MOBILE ONLY DAYS DISPLAY */}
+        <div className={`md:hidden flex items-center gap-1 text-[10px] font-bold uppercase italic mt-1 ${time.color}`}>
+          <Clock size={10} /> {time.text}
+        </div>
+      </td>
       <td className="py-4 px-4 text-[10px] font-black uppercase text-slate-700 hidden md:table-cell">{t.status}</td>
       <td className="py-4 px-2">
         <button onClick={() => cyclePriority(t.id, p)} className={`mx-auto block w-28 md:w-36 py-2 rounded-full border-2 text-[9px] font-black uppercase transition-all ${p === 'URGENT' ? 'bg-red-900/20 text-red-500 border-red-500/40' : p === 'HIGH' ? 'bg-orange-900/20 text-orange-500 border-orange-500/40' : p === 'MEDIUM' ? 'bg-blue-900/20 text-blue-400 border-blue-400/40' : 'bg-emerald-900/20 text-emerald-500 border-emerald-500/40'}`}>● {p}</button>
@@ -34,14 +40,12 @@ function SortableRow({ t, updateTaskField, cyclePriority, deleteTask, getTimeLef
   );
 }
 
-// --- MAIN APP ---
 export default function App() {
   const [tasks, setTasks] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [activeTab, setActiveTab] = useState('tasks');
   const [loading, setLoading] = useState(true);
   const [isListening, setIsListening] = useState(false);
-  
   const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor));
   const priorityOrder = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
 
@@ -55,7 +59,6 @@ export default function App() {
     setLoading(false);
   }
 
-  // --- TINY VOICE FEATURE ---
   const startVoiceInput = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) return alert("Browser not supported");
@@ -68,6 +71,19 @@ export default function App() {
       if (data) setTasks(prev => [...prev, data[0]]);
     };
     recognition.start();
+  };
+
+  const getTimeLeft = (deadline, isDone) => {
+    if (isDone) return { text: "DONE", color: "text-slate-600" };
+    if (!deadline) return { text: "NO DATE", color: "text-blue-500/40" };
+    const today = new Date(); today.setHours(0,0,0,0);
+    const target = new Date(deadline);
+    const diffDays = Math.ceil((target - today) / (1000 * 60 * 60 * 24));
+    if (diffDays < 0) return { text: "OVERDUE", color: "text-red-600 font-black animate-pulse" };
+    if (diffDays === 0) return { text: "TODAY", color: "text-red-500 font-bold" };
+    if (diffDays <= 5) return { text: `${diffDays} DAYS`, color: "text-orange-500 font-bold" };
+    if (diffDays <= 10) return { text: `${diffDays} DAYS`, color: "text-yellow-400 font-bold" };
+    return { text: `${diffDays} DAYS`, color: "text-emerald-500" };
   };
 
   const sortedTasks = useMemo(() => {
@@ -105,13 +121,6 @@ export default function App() {
     setTasks(tasks.filter(t => t.id !== id));
   };
 
-  const getTimeLeft = (deadline, isDone) => {
-    if (isDone) return { text: "DONE", color: "text-slate-600" };
-    if (!deadline) return { text: "NO DATE", color: "text-blue-500/40" };
-    const diff = Math.ceil((new Date(deadline) - new Date().setHours(0,0,0,0)) / (1000 * 60 * 60 * 24));
-    return diff < 0 ? { text: "OVERDUE", color: "text-red-600" } : { text: `${diff} DAYS`, color: "text-emerald-500" };
-  };
-
   if (loading) return <div className="bg-[#1a1a1a] min-h-screen text-white p-10 font-black italic">Syncing...</div>;
 
   return (
@@ -136,7 +145,7 @@ export default function App() {
         <div className="w-full overflow-x-auto">
           <table className="w-full text-left border-separate border-spacing-y-2 table-fixed min-w-[600px] md:min-w-full">
             <thead>
-              <tr className="text-slate-700 text-[10px] font-black uppercase tracking-[0.25em]"><th className="w-10 px-2 pb-4"></th><th className="w-12 px-2 pb-4"></th><th className="px-2 pb-4 text-slate-500">TASKS</th><th className="w-32 hidden md:table-cell px-4 pb-4">STATUS</th><th className="w-32 md:w-44 text-center px-2 pb-4">PRIORITY</th><th className="w-32 hidden md:table-cell px-4 pb-4">TIME</th><th className="w-32 md:w-48 text-center px-2 pb-4">DATE</th><th className="w-10 px-2 pb-4"></th></tr>
+              <tr className="text-slate-700 text-[10px] font-black uppercase tracking-[0.25em]"><th className="w-10 px-2 pb-4"></th><th className="w-12 px-2 pb-4"></th><th className="px-2 pb-4 text-slate-500">TASKS</th><th className="w-32 hidden md:table-cell px-4 pb-4 text-slate-500">STATUS</th><th className="w-32 md:w-44 text-center px-2 pb-4 text-slate-500">PRIORITY</th><th className="w-32 hidden md:table-cell px-4 pb-4 text-slate-500">TIME</th><th className="w-32 md:w-48 text-center px-2 pb-4 text-slate-500">DATE</th><th className="w-10 px-2 pb-4"></th></tr>
             </thead>
             <tbody>
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => { const { active, over } = e; if (active.id !== over.id) { setTasks((items) => { const oldIndex = items.findIndex((i) => i.id === active.id); const newIndex = items.findIndex((i) => i.id === over.id); return arrayMove(items, oldIndex, newIndex); }); } }}>
