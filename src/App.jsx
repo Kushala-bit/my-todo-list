@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from './supabaseClient';
 import { Trash2, Clock, Calendar, CheckCircle2, Circle, Plus, GripVertical } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
@@ -14,7 +14,6 @@ function SortableRow({ t, updateTaskField, cyclePriority, deleteTask, getTimeLef
     transition,
     zIndex: isDragging ? 100 : 1,
     opacity: isDragging ? 0.6 : 1,
-    position: 'relative'
   };
 
   const isDone = t.status === 'Completed';
@@ -23,13 +22,13 @@ function SortableRow({ t, updateTaskField, cyclePriority, deleteTask, getTimeLef
 
   return (
     <tr ref={setNodeRef} style={style} className="group hover:bg-white/[0.02] transition-colors bg-[#1a1a1a]">
-      {/* DRAG HANDLE (GRAB) */}
-      <td className="py-4 px-4 text-center cursor-grab active:cursor-grabbing" {...attributes} {...listeners}>
+      {/* GRAB HANDLE */}
+      <td className="py-4 px-2 md:px-4 text-center cursor-grab active:cursor-grabbing" {...attributes} {...listeners}>
         <GripVertical size={20} className="text-slate-800 group-hover:text-slate-600 mx-auto" />
       </td>
       
-      {/* DONE COLUMN */}
-      <td className="py-4 px-4 text-center">
+      {/* CHECKBOX */}
+      <td className="py-4 px-2 md:px-4 text-center">
         <button onClick={() => updateTaskField(t.id, 'status', isDone ? 'To Do' : 'Completed')}>
           {isDone ? 
             <CheckCircle2 size={24} className="text-white mx-auto" strokeWidth={3} /> : 
@@ -38,25 +37,25 @@ function SortableRow({ t, updateTaskField, cyclePriority, deleteTask, getTimeLef
         </button>
       </td>
 
-      {/* TASK NAME */}
-      <td className="py-4 px-4">
+      {/* TASK NAME - FLEXIBLE WIDTH */}
+      <td className="py-4 px-2 md:px-4">
         <input 
-          className={`bg-transparent border-none outline-none text-xl font-bold w-full transition-all ${isDone ? 'line-through text-slate-700' : 'text-slate-200 focus:text-blue-500'}`}
+          className={`bg-transparent border-none outline-none text-lg md:text-xl font-bold w-full transition-all ${isDone ? 'line-through text-slate-700' : 'text-slate-200 focus:text-blue-500'}`}
           value={t.name}
           onChange={(e) => updateTaskField(t.id, 'name', e.target.value)}
         />
       </td>
 
-      {/* STATUS */}
-      <td className="py-4 px-4 text-[10px] font-black uppercase text-slate-700 tracking-widest">
+      {/* STATUS - HIDDEN ON PHONE TO STOP OVERLAP */}
+      <td className="py-4 px-4 text-[10px] font-black uppercase text-slate-700 tracking-widest hidden md:table-cell">
         {t.status}
       </td>
 
-      {/* PRIORITY CLICK-TO-CYCLE */}
-      <td className="py-4 px-4">
+      {/* PRIORITY */}
+      <td className="py-4 px-2 md:px-4">
         <button 
           onClick={() => cyclePriority(t.id, p)}
-          className={`mx-auto block w-36 py-2 rounded-full border-2 text-[10px] font-black uppercase tracking-widest text-center transition-all active:scale-95 ${
+          className={`mx-auto block w-28 md:w-36 py-2 rounded-full border-2 text-[9px] md:text-[10px] font-black uppercase tracking-widest text-center transition-all ${
             p === 'URGENT' ? 'bg-red-900/20 text-red-500 border-red-500/40' : 
             p === 'HIGH' ? 'bg-orange-900/20 text-orange-500 border-orange-500/40' : 
             p === 'MEDIUM' ? 'bg-blue-900/20 text-blue-400 border-blue-400/40' : 
@@ -67,29 +66,26 @@ function SortableRow({ t, updateTaskField, cyclePriority, deleteTask, getTimeLef
         </button>
       </td>
 
-      {/* TIME LEFT (COLOR LOGIC) */}
-      <td className="py-4 px-4">
+      {/* TIME - HIDDEN ON PHONE TO STOP OVERLAP */}
+      <td className="py-4 px-4 hidden md:table-cell">
         <div className={`flex items-center gap-2 font-bold text-xs uppercase italic tracking-tighter ${time.color}`}>
           <Clock size={14} strokeWidth={3} />
           {time.text}
         </div>
       </td>
 
-      {/* DATE PICKER */}
-      <td className="py-4 px-4">
-        <div className="flex items-center gap-3 bg-[#222] px-4 py-2 rounded-xl border border-white/5 w-fit shadow-inner">
-          <Calendar size={14} className="text-slate-600" />
-          <input 
-            type="date"
-            value={t.deadline}
-            onChange={(e) => updateTaskField(t.id, 'deadline', e.target.value)}
-            className="bg-transparent border-none outline-none text-xs text-slate-400 font-bold cursor-pointer [color-scheme:dark]"
-          />
-        </div>
+      {/* DATE */}
+      <td className="py-4 px-2 md:px-4">
+        <input 
+          type="date"
+          value={t.deadline}
+          onChange={(e) => updateTaskField(t.id, 'deadline', e.target.value)}
+          className="bg-transparent border border-white/5 rounded px-1 md:px-2 py-1 text-[10px] md:text-xs text-slate-400 font-bold [color-scheme:dark]"
+        />
       </td>
 
-      {/* DELETE ACTION */}
-      <td className="py-4 px-4 text-right">
+      {/* DELETE */}
+      <td className="py-4 px-2 text-right">
         <button onClick={() => deleteTask(t.id)} className="p-2 text-slate-800 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100">
           <Trash2 size={20} />
         </button>
@@ -98,60 +94,56 @@ function SortableRow({ t, updateTaskField, cyclePriority, deleteTask, getTimeLef
   );
 }
 
-// --- MAIN APP COMPONENT ---
+// --- MAIN APP ---
 export default function App() {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
-
+  const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor));
   const priorityOrder = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
 
   useEffect(() => { fetchTasks(); }, []);
 
+  // AUTO-SORT: Priority first, then Date
+  const sortedTasks = useMemo(() => {
+    return [...tasks].sort((a, b) => {
+      if (a.status === 'Completed' && b.status !== 'Completed') return 1;
+      if (a.status !== 'Completed' && b.status === 'Completed') return -1;
+      const pA = priorityOrder.indexOf(a.priority?.toUpperCase() || 'MEDIUM');
+      const pB = priorityOrder.indexOf(b.priority?.toUpperCase() || 'MEDIUM');
+      if (pB !== pA) return pB - pA;
+      return new Date(a.deadline) - new Date(b.deadline);
+    });
+  }, [tasks]);
+
   async function fetchTasks() {
-    const { data } = await supabase.from('tasks').select('*').order('id', { ascending: true });
+    const { data } = await supabase.from('tasks').select('*');
     if (data) setTasks(data);
     setLoading(false);
   }
 
   const getTimeLeft = (deadline, isDone) => {
-    if (isDone) return { text: "DONE", color: "text-slate-600 font-bold" };
+    if (isDone) return { text: "DONE", color: "text-slate-600" };
     if (!deadline) return { text: "NO DATE", color: "text-blue-500/40" };
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const target = new Date(deadline);
-    const diffTime = target - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays < 0) return { text: "OVERDUE", color: "text-[#ff0000] font-black animate-pulse" };
-    if (diffDays === 0) return { text: "TODAY", color: "text-red-400 font-bold" };
-    if (diffDays < 5) return { text: `${diffDays} DAYS`, color: "text-red-400/80" };
-    if (diffDays < 10) return { text: `${diffDays} DAYS`, color: "text-yellow-400" };
-    return { text: `${diffDays} DAYS`, color: "text-emerald-500" };
+    const diff = Math.ceil((new Date(deadline) - new Date().setHours(0,0,0,0)) / (1000 * 60 * 60 * 24));
+    if (diff < 0) return { text: "OVERDUE", color: "text-red-600 animate-pulse" };
+    if (diff === 0) return { text: "TODAY", color: "text-red-400" };
+    return { text: `${diff} DAYS`, color: diff < 10 ? "text-yellow-400" : "text-emerald-500" };
   };
 
   const updateTaskField = async (id, field, value) => {
-    const { error } = await supabase.from('tasks').update({ [field]: value }).eq('id', id);
-    if (!error) setTasks(tasks.map(t => t.id === id ? { ...t, [field]: value } : t));
+    await supabase.from('tasks').update({ [field]: value }).eq('id', id);
+    setTasks(tasks.map(t => t.id === id ? { ...t, [field]: value } : t));
   };
 
-  const cyclePriority = (id, currentPriority) => {
-    const currentIndex = priorityOrder.indexOf(currentPriority?.toUpperCase() || 'MEDIUM');
-    const nextIndex = (currentIndex + 1) % priorityOrder.length;
-    updateTaskField(id, 'priority', priorityOrder[nextIndex]);
+  const cyclePriority = (id, cur) => {
+    const next = priorityOrder[(priorityOrder.indexOf(cur) + 1) % 4];
+    updateTaskField(id, 'priority', next);
   };
 
   const addTask = async () => {
     const name = prompt("Task Name?");
     if (!name) return;
-    const { data } = await supabase.from('tasks').insert([{ 
-      name, status: 'To Do', priority: 'MEDIUM', deadline: new Date().toISOString().split('T')[0]
-    }]).select();
+    const { data } = await supabase.from('tasks').insert([{ name, status: 'To Do', priority: 'MEDIUM', deadline: new Date().toISOString().split('T')[0] }]).select();
     if (data) setTasks([...tasks, data[0]]);
   };
 
@@ -171,46 +163,39 @@ export default function App() {
     }
   };
 
-  if (loading) return <div className="bg-[#1a1a1a] min-h-screen text-white p-10 font-bold text-2xl uppercase italic tracking-tighter">Syncing Cloud...</div>;
+  if (loading) return <div className="bg-[#1a1a1a] min-h-screen text-white p-10 font-black italic">Syncing...</div>;
 
   return (
-    <div className="min-h-screen w-full bg-[#1a1a1a] text-slate-300 p-8 md:p-14 font-sans select-none">
+    <div className="min-h-screen w-full bg-[#1a1a1a] text-slate-300 p-4 md:p-14 font-sans select-none">
       <div className="w-full mb-12 flex justify-between items-center border-b border-white/5 pb-8">
         <div>
-          <h1 className="text-7xl font-black text-white mb-2 italic tracking-tighter uppercase">To-Do List</h1>
-          <p className="text-slate-600 font-bold uppercase tracking-[0.4em] text-xs">Auto-Saving Enabled</p>
+          <h1 className="text-5xl md:text-7xl font-black text-white italic tracking-tighter uppercase">To-Do List</h1>
+          <p className="text-slate-600 font-bold uppercase tracking-[0.4em] text-[10px]">Auto-Saving Enabled</p>
         </div>
-        <button onClick={addTask} className="bg-blue-600 hover:bg-blue-500 text-white p-5 rounded-2xl transition-all active:scale-90 shadow-lg shadow-blue-600/20">
+        <button onClick={addTask} className="bg-blue-600 text-white p-4 md:p-5 rounded-2xl shadow-lg active:scale-90 transition-transform">
           <Plus size={32} strokeWidth={4} />
         </button>
       </div>
 
-      <div className="w-full">
+      <div className="w-full overflow-x-auto">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <table className="w-full text-left border-separate border-spacing-y-2 table-fixed">
+          <table className="w-full text-left border-separate border-spacing-y-2 table-fixed min-w-[600px] md:min-w-full">
             <thead>
-              <tr className="text-slate-700 text-xs font-black uppercase tracking-[0.25em]">
-                <th className="px-4 pb-4 w-16"></th>
-                <th className="px-4 pb-4 w-20"></th>
-                <th className="px-4 pb-4 w-1/3 text-slate-500">TASKS</th>
-                <th className="px-4 pb-4 w-32">STATUS</th>
-                <th className="px-4 pb-4 w-44 text-center">PRIORITY</th>
-                <th className="px-4 pb-4 w-32">TIME LEFT</th>
-                <th className="px-4 pb-4 w-48">DATE</th>
-                <th className="px-4 pb-4 w-16"></th>
+              <tr className="text-slate-700 text-[10px] font-black uppercase tracking-[0.25em]">
+                <th className="w-10 md:w-16 px-2 pb-4"></th>
+                <th className="w-12 md:w-20 px-2 pb-4"></th>
+                <th className="px-2 pb-4 text-slate-500">TASKS</th>
+                <th className="w-32 hidden md:table-cell px-4 pb-4">STATUS</th>
+                <th className="w-32 md:w-44 text-center px-2 pb-4">PRIORITY</th>
+                <th className="w-32 hidden md:table-cell px-4 pb-4">TIME</th>
+                <th className="w-32 md:w-48 text-center px-2 pb-4">DATE</th>
+                <th className="w-10 px-2 pb-4"></th>
               </tr>
             </thead>
             <tbody>
-              <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                {tasks.map((t) => (
-                  <SortableRow 
-                    key={t.id} 
-                    t={t} 
-                    updateTaskField={updateTaskField} 
-                    cyclePriority={cyclePriority} 
-                    deleteTask={deleteTask} 
-                    getTimeLeft={getTimeLeft} 
-                  />
+              <SortableContext items={sortedTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                {sortedTasks.map((t) => (
+                  <SortableRow key={t.id} t={t} updateTaskField={updateTaskField} cyclePriority={cyclePriority} deleteTask={deleteTask} getTimeLeft={getTimeLeft} />
                 ))}
               </SortableContext>
             </tbody>
