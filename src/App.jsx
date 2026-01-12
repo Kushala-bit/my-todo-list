@@ -13,6 +13,9 @@ function SortableRow({ t, updateTaskField, cyclePriority, deleteTask, getTimeLef
   const p = t.priority?.toUpperCase() || 'MEDIUM';
   const time = getTimeLeft(t.deadline, isDone);
 
+
+
+
   return (
     <tr ref={setNodeRef} style={style} className="group hover:bg-white/[0.02] transition-colors bg-[#1a1a1a]">
       <td className="py-4 px-2 text-center cursor-grab active:cursor-grabbing" {...attributes} {...listeners}><GripVertical size={18} className="text-slate-800 group-hover:text-slate-600 mx-auto" /></td>
@@ -129,8 +132,8 @@ export default function App() {
     const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) return { text: "TODAY", color: "text-orange-500 animate-pulse" };
-    if (diffDays < 0) return { text: `${Math.abs(diffDays)}D OVER`, color: "text-red-600" };
-    return { text: `${diffDays}D LEFT`, color: diffDays <= 2 ? "text-orange-500" : "text-emerald-500" };
+    if (diffDays < 0) return { text: `OVERDUE`, color: "text-red-600" };
+    return { text: `${diffDays}DAYS`, color: diffDays <= 2 ? "text-orange-500" : "text-emerald-500" };
   };
 
   if (loading) return <div className="bg-[#1a1a1a] min-h-screen text-white p-10 font-black italic">WIQ SYNCING...</div>;
