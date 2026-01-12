@@ -12,15 +12,11 @@ function SortableRow({ t, updateTaskField, cyclePriority, deleteTask, getTimeLef
   const isDone = t.status === 'Completed';
   const p = t.priority?.toUpperCase() || 'MEDIUM';
   const time = getTimeLeft(t.deadline, isDone);
-
-  // FIXED: DD/MM/YYYY Display logic
   const displayDate = t.deadline ? t.deadline.split('-').reverse().join('/') : 'NO DATE';
 
   return (
     <tr ref={setNodeRef} style={style} className="group hover:bg-white/[0.02] transition-colors bg-[#1a1a1a]">
-      <td className="py-4 px-2 text-center cursor-grab active:cursor-grabbing" {...attributes} {...listeners}>
-        <GripVertical size={18} className="text-slate-800 group-hover:text-slate-500 mx-auto" />
-      </td>
+      <td className="py-4 px-2 text-center cursor-grab active:cursor-grabbing" {...attributes} {...listeners}><GripVertical size={18} className="text-slate-800 group-hover:text-slate-500 mx-auto" /></td>
       <td className="py-4 px-2 text-center">
         <button onClick={() => updateTaskField(t.id, 'status', isDone ? 'To Do' : 'Completed')}>
           {isDone ? <CheckCircle2 size={22} className="text-white mx-auto" strokeWidth={3} /> : <Circle size={22} className="text-slate-800 hover:text-slate-600 mx-auto" strokeWidth={3} />}
@@ -34,7 +30,6 @@ function SortableRow({ t, updateTaskField, cyclePriority, deleteTask, getTimeLef
       </td>
       <td className="py-4 px-2 hidden md:table-cell">
         <div className="flex items-center gap-6 justify-end">
-          {/* FIXED: One Calendar Icon + DD/MM/YYYY Text */}
           <div className="relative flex items-center gap-2 opacity-60 hover:opacity-100 transition-opacity">
              <span className="text-[11px] font-bold text-slate-300 pointer-events-none">{displayDate}</span>
              <input type="date" value={t.deadline || ''} onChange={(e) => updateTaskField(t.id, 'deadline', e.target.value)} className="absolute inset-0 opacity-0 cursor-pointer [color-scheme:dark]" />
@@ -74,7 +69,11 @@ export default function App() {
     setLoading(false);
   }
 
-  // FIXED: Drag and Drop Handler
+  const readinessData = useMemo(() => subjects.map(s => ({ 
+    name: s.name, 
+    p: Math.round((s.completed_modules / s.total_modules) * 100) || 0 
+  })), [subjects]);
+
   const handleDragEnd = async (event) => {
     const { active, over } = event;
     if (active.id !== over.id) {
@@ -128,51 +127,34 @@ export default function App() {
         </DndContext>
       )}
 
-      {/* FLOATING ACTION BUTTONS */}
-      {activeTab === 'tasks' && (
-        <div className="fixed bottom-8 right-8 flex gap-3 z-50">
-          <button className={`p-4 rounded-2xl shadow-2xl ${isListening ? 'bg-red-600 animate-pulse' : 'bg-purple-600'}`}><Mic size={24} className="text-white" /></button>
-          <button onClick={async () => {const name=prompt("Task?"); if(name) await supabase.from('tasks').insert([{name, status:'To Do', priority:'MEDIUM', deadline:new Date().toLocaleDateString('en-CA'), position:tasks.length}]); fetchData();}} className="bg-blue-600 p-4 rounded-2xl shadow-2xl active:scale-95"><Plus size={24} className="text-white" /></button>
-        </div>
-      )}
-
       {activeTab === 'study' && (
         <div className="space-y-8">
-           {/* Timer Row */}
-           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="bg-gradient-to-br from-purple-600 to-indigo-700 p-8 rounded-[2rem] flex flex-col items-center justify-center text-white min-h-[250px]">
-                <h2 className="text-6xl font-black italic">{Math.floor(secondsLeft/60)}:{String(secondsLeft%60).padStart(2,'0')}</h2>
-                <button onClick={() => setIsActive(!isActive)} className="bg-white text-purple-600 p-4 rounded-full mt-6 shadow-lg">{isActive ? <Square size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}</button>
-              </div>
-              <div className="lg:col-span-2 bg-white/5 p-8 rounded-[2rem] border border-white/5 min-h-[250px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={[]/* Placeholder for study chart */}><Line type="monotone" dataKey="mins" stroke="#a855f7" strokeWidth={4} /></LineChart>
-                </ResponsiveContainer>
-              </div>
-           </div>
-
-           {/* Readiness Charts Row - FIXED Container */}
            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch pb-10">
-              <div className="bg-white/5 p-8 rounded-[2rem] border border-white/5 h-[400px]">
+              <div className="bg-white/5 p-8 rounded-[2rem] border border-white/5 h-[450px]">
                  <h2 className="text-lg font-black text-white italic mb-6 uppercase">Subjects</h2>
-                 <div className="space-y-4 overflow-y-auto h-[300px] pr-2">
+                 <div className="space-y-4 overflow-y-auto h-[320px] pr-2">
                     {subjects.map(s => (
-                      <div key={s.id} className="bg-[#1a1a1a] p-4 rounded-xl border border-white/5 flex justify-between items-center">
-                        <div className="flex-1 mr-4"><h3 className="text-sm font-black text-slate-200 uppercase">{s.name}</h3></div>
-                        <div className="flex gap-2"><input type="number" value={s.completed_modules} onChange={(e) => supabase.from('subjects').update({completed_modules: parseInt(e.target.value)}).eq('id', s.id).then(() => fetchData())} className="bg-white/5 w-10 text-center rounded text-purple-400 font-bold text-xs" /><span className="text-slate-600">/</span><span className="text-slate-400 text-xs font-bold pt-1">{s.total_modules}</span></div>
+                      <div key={s.id} className="bg-[#1a1a1a] p-4 rounded-xl border border-white/5 flex justify-between items-center group">
+                        <div className="flex-1 mr-4">
+                          <h3 className="text-sm font-black text-slate-200 uppercase">{s.name}</h3>
+                          <div className="w-full bg-white/5 h-1 rounded-full mt-2 overflow-hidden"><div className="bg-purple-500 h-full" style={{ width: `${(s.completed_modules/s.total_modules)*100}%` }}></div></div>
+                        </div>
+                        <div className="flex gap-2">
+                          <input type="number" value={s.completed_modules} onChange={(e) => supabase.from('subjects').update({completed_modules: parseInt(e.target.value)}).eq('id', s.id).then(() => fetchData())} className="bg-white/10 w-12 text-center rounded text-purple-400 font-bold text-xs p-1" />
+                          <span className="text-slate-600 font-bold pt-1">/ {s.total_modules}</span>
+                        </div>
                       </div>
                     ))}
                  </div>
               </div>
-              {/* FIXED: BarChart Now Shows */}
-              <div className="bg-white/5 p-8 rounded-[2rem] border border-white/5 h-[400px]">
+              <div className="bg-white/5 p-8 rounded-[2rem] border border-white/5 h-[450px]">
                 <h2 className="text-lg font-black text-white italic mb-6 uppercase">Readiness</h2>
-                <div className="h-[300px] w-full">
+                <div className="h-[320px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={readinessData} layout="vertical" margin={{ left: -20, right: 20 }}>
                       <XAxis type="number" domain={[0, 100]} hide />
                       <YAxis dataKey="name" type="category" tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 'bold'}} width={90} axisLine={false} tickLine={false} />
-                      <Bar dataKey="p" radius={[0, 8, 8, 0]} barSize={14}>
+                      <Bar dataKey="p" radius={[0, 8, 8, 0]} barSize={16}>
                         {readinessData.map((entry, index) => ( <Cell key={index} fill={entry.p > 70 ? '#10b981' : entry.p > 35 ? '#f59e0b' : '#ef4444'} /> ))}
                       </Bar>
                     </BarChart>
