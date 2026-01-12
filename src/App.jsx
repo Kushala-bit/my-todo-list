@@ -104,7 +104,7 @@ export default function App() {
           <h1 className="text-5xl md:text-7xl font-black text-white italic tracking-tighter uppercase leading-none">W I Q</h1>
           <div className="flex gap-4 mt-6">
             <button onClick={() => setActiveTab('tasks')} className={`px-4 py-2 rounded-xl font-bold text-[10px] ${activeTab === 'tasks' ? 'bg-blue-600 text-white' : 'bg-white/5'}`}>TASKS</button>
-            <button onClick={() => setActiveTab('study')} className={`px-4 py-2 rounded-xl font-bold text-[10px] ${activeTab === 'study' ? 'bg-purple-600 text-white' : 'bg-white/5'}`}>STUDY DASH</button>
+            <button onClick={() => setActiveTab('study')} className={`px-4 py-2 rounded-xl font-bold text-[10px] ${activeTab === 'study' ? 'bg-purple-600 text-white' : 'bg-white/5'}`}>STUDY DASHBOARD</button>
           </div>
         </div>
       </div>
