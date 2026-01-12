@@ -65,7 +65,7 @@ export default function App() {
 
   async function fetchData() {
     const { data: tData } = await supabase.from('tasks').select('*');
-    const { data: sData } = await supabase.from('subjects').select('*');
+    const { data: sData } = await supabase.from('subjects').select('*').order('name', { ascending: true });
     const { data: lData } = await supabase.from('study_sessions').select('*');
     if (tData) setTasks(tData);
     if (sData) setSubjects(sData);
@@ -95,7 +95,7 @@ export default function App() {
     return { text: `${diff} DAYS`, color: diff <= 3 ? "text-orange-500" : "text-emerald-500" };
   };
 
-  if (loading) return <div className="bg-[#1a1a1a] min-h-screen text-white p-10 font-black italic">WIQ SYNC...</div>;
+  if (loading) return <div className="bg-[#1a1a1a] min-h-screen text-white p-10 font-black italic">WIQ SYNCING...</div>;
 
   return (
     <div className="min-h-screen w-full bg-[#1a1a1a] text-slate-300 p-4 md:p-14 font-sans select-none">
@@ -121,43 +121,58 @@ export default function App() {
 
       {activeTab === 'study' && (
         <div className="space-y-8 animate-in fade-in duration-500">
+          {/* TOP ROW: TIMER & LINE GRAPH */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="bg-gradient-to-br from-purple-600 to-indigo-700 p-8 rounded-[2.5rem] flex flex-col items-center justify-center text-white">
+            <div className="bg-gradient-to-br from-purple-600 to-indigo-700 p-8 rounded-[2.5rem] flex flex-col items-center justify-center text-white min-h-[300px]">
               <span className="text-[10px] font-black uppercase tracking-widest mb-4">Focus Timer</span>
               <h2 className="text-6xl font-black italic mb-6">{Math.floor(secondsLeft/60)}:{String(secondsLeft%60).padStart(2,'0')}</h2>
               <button onClick={() => setIsActive(!isActive)} className="bg-white text-purple-600 p-4 rounded-full">{isActive ? <Square size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" />}</button>
             </div>
-            <div className="lg:col-span-2 bg-white/5 p-8 rounded-[2.5rem] border border-white/5 h-[300px]">
+            <div className="lg:col-span-2 bg-white/5 p-8 rounded-[2.5rem] border border-white/5 min-h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={lineData}><Tooltip contentStyle={{backgroundColor: '#1a1a1a', border: 'none', borderRadius: '12px'}} /><Line type="monotone" dataKey="mins" stroke="#a855f7" strokeWidth={4} dot={{fill: '#a855f7', r: 6}} /></LineChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5">
-              <h2 className="text-xl font-black text-white italic mb-8">SUBJECTS</h2>
-              {subjects.map(s => (
-                <div key={s.id} className="bg-[#1a1a1a] p-5 rounded-2xl border border-white/5 mb-4 flex justify-between items-center">
-                  <div className="flex-1"><h3 className="text-lg font-black text-slate-200 uppercase">{s.name}</h3><div className="w-full bg-white/5 h-2 rounded-full mt-3 overflow-hidden"><div className="bg-purple-500 h-full transition-all" style={{ width: `${(s.completed_modules/s.total_modules)*100}%` }}></div></div></div>
-                  <div className="flex gap-2 ml-4">
-                    <input type="number" value={s.completed_modules} onChange={(e) => supabase.from('subjects').update({ completed_modules: parseInt(e.target.value) }).eq('id', s.id).then(() => fetchData())} className="bg-white/5 w-12 text-center rounded text-purple-400 font-bold" />
-                    <span className="text-slate-600">/</span>
-                    <input type="number" value={s.total_modules} onChange={(e) => supabase.from('subjects').update({ total_modules: parseInt(e.target.value) }).eq('id', s.id).then(() => fetchData())} className="bg-white/5 w-12 text-center rounded text-slate-500 font-bold" />
+          {/* BOTTOM ROW: SUBJECTS & READINESS (ALIGNED) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+            {/* SUBJECTS CARD */}
+            <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 flex flex-col h-full">
+              <h2 className="text-xl font-black text-white italic mb-8 uppercase tracking-tighter">Subjects</h2>
+              <div className="space-y-4 overflow-y-auto pr-2 max-h-[400px] custom-scrollbar">
+                {subjects.map(s => (
+                  <div key={s.id} className="bg-[#1a1a1a] p-5 rounded-2xl border border-white/5 flex justify-between items-center group">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-black text-slate-200 uppercase">{s.name}</h3>
+                      <div className="w-full bg-white/5 h-2 rounded-full mt-3 overflow-hidden">
+                        <div className="bg-purple-500 h-full transition-all duration-700" style={{ width: `${(s.completed_modules/s.total_modules)*100}%` }}></div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 ml-4">
+                      <input type="number" value={s.completed_modules} onChange={(e) => supabase.from('subjects').update({ completed_modules: parseInt(e.target.value) }).eq('id', s.id).then(() => fetchData())} className="bg-white/5 w-12 text-center rounded text-purple-400 font-bold outline-none" />
+                      <span className="text-slate-600">/</span>
+                      <input type="number" value={s.total_modules} onChange={(e) => supabase.from('subjects').update({ total_modules: parseInt(e.target.value) }).eq('id', s.id).then(() => fetchData())} className="bg-white/5 w-12 text-center rounded text-slate-500 font-bold outline-none" />
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-            <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 h-[400px]">
-              <h2 className="text-xl font-black text-white italic mb-8">READINESS</h2>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={readinessData} layout="vertical">
-                  <XAxis type="number" domain={[0, 100]} hide /><YAxis dataKey="name" type="category" tick={{fill: '#94a3b8', fontSize: 12}} width={80} />
-                  <Bar dataKey="p" radius={[0, 10, 10, 0]} barSize={20}>
-                    {readinessData.map((entry, index) => ( <Cell key={index} fill={entry.p > 70 ? '#10b981' : '#f59e0b'} /> ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+
+            {/* READINESS CARD */}
+            <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 flex flex-col h-full min-h-[400px]">
+              <h2 className="text-xl font-black text-white italic mb-8 uppercase tracking-tighter">Readiness</h2>
+              <div className="flex-1">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={readinessData} layout="vertical" margin={{ left: -20, right: 20 }}>
+                    <XAxis type="number" domain={[0, 100]} hide />
+                    <YAxis dataKey="name" type="category" tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 'bold'}} width={100} axisLine={false} tickLine={false} />
+                    <Bar dataKey="p" radius={[0, 10, 10, 0]} barSize={18}>
+                      {readinessData.map((entry, index) => ( <Cell key={index} fill={entry.p > 70 ? '#10b981' : entry.p > 35 ? '#f59e0b' : '#ef4444'} /> ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
         </div>
