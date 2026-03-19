@@ -1,24 +1,22 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { supabase } from './supabaseClient';
-import { Trash2, Clock, CheckCircle2, Circle, Plus, GripVertical, Mic, Play, Square, Calendar, BarChart2, Check, X } from 'lucide-react';
+import { Trash2, Clock, CheckCircle2, Circle, Plus, GripVertical, Mic, Play, Square, Calendar, Check } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LineChart, Line, CartesianGrid } from 'recharts';
 
 const PRIORITY_CYCLE = ['LOW', 'MEDIUM', 'HIGH', 'URGENT'];
-
 const PRIORITY_STYLE = {
-  URGENT: { bg: 'bg-red-900/40',    text: 'text-red-400',    border: 'border-red-500/50',    dot: '#f87171' },
-  HIGH:   { bg: 'bg-orange-900/40', text: 'text-orange-400', border: 'border-orange-500/50', dot: '#fb923c' },
-  MEDIUM: { bg: 'bg-blue-900/40',   text: 'text-blue-400',   border: 'border-blue-500/50',   dot: '#60a5fa' },
-  LOW:    { bg: 'bg-emerald-900/40',text: 'text-emerald-400',border: 'border-emerald-500/50',dot: '#34d399' },
+  URGENT: { bg: 'bg-red-900/40',     text: 'text-red-400',     border: 'border-red-500/50',     dot: '#f87171' },
+  HIGH:   { bg: 'bg-orange-900/40',  text: 'text-orange-400',  border: 'border-orange-500/50',  dot: '#fb923c' },
+  MEDIUM: { bg: 'bg-blue-900/40',    text: 'text-blue-400',    border: 'border-blue-500/50',    dot: '#60a5fa' },
+  LOW:    { bg: 'bg-emerald-900/40', text: 'text-emerald-400', border: 'border-emerald-500/50', dot: '#34d399' },
 };
-
 const STATUS_STYLE = {
-  'Completed':  { bg: 'bg-emerald-900/40', text: 'text-emerald-400', border: 'border-emerald-500/40' },
-  'In Progress':{ bg: 'bg-amber-900/40',   text: 'text-amber-400',   border: 'border-amber-500/40' },
-  'To Do':      { bg: 'bg-slate-800',      text: 'text-slate-400',   border: 'border-slate-600/40' },
+  'Completed':   { bg: 'bg-emerald-900/40', text: 'text-emerald-400', border: 'border-emerald-500/40' },
+  'In Progress': { bg: 'bg-amber-900/40',   text: 'text-amber-400',   border: 'border-amber-500/40' },
+  'To Do':       { bg: 'bg-slate-800',      text: 'text-slate-400',   border: 'border-slate-600/40' },
 };
 const STATUS_CYCLE = ['To Do', 'In Progress', 'Completed'];
 
@@ -31,7 +29,7 @@ function getTimeLeft(deadline, isDone) {
   if (diff === 0) return { text: 'TODAY',   color: 'text-orange-400', bg: 'bg-orange-900/30', border: 'border-orange-500/40' };
   if (diff < 0)  return { text: 'OVERDUE',  color: 'text-red-400',    bg: 'bg-red-900/30',    border: 'border-red-500/40' };
   return diff <= 2
-    ? { text: `${diff} DAYS`, color: 'text-orange-400', bg: 'bg-orange-900/30', border: 'border-orange-500/40' }
+    ? { text: `${diff} DAYS`, color: 'text-orange-400',  bg: 'bg-orange-900/30',  border: 'border-orange-500/40' }
     : { text: `${diff} DAYS`, color: 'text-emerald-400', bg: 'bg-emerald-900/30', border: 'border-emerald-500/40' };
 }
 
@@ -39,7 +37,7 @@ function SortableRow({ t, onUpdate, onDelete }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: t.id });
   const style = { transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 100 : 1, opacity: isDragging ? 0.4 : 1 };
   const isDone = t.status === 'Completed';
-  const p = (t.priority?.toUpperCase()) || 'MEDIUM';
+  const p  = t.priority?.toUpperCase() || 'MEDIUM';
   const ps = PRIORITY_STYLE[p] || PRIORITY_STYLE.MEDIUM;
   const ss = STATUS_STYLE[t.status] || STATUS_STYLE['To Do'];
   const time = getTimeLeft(t.deadline, isDone);
@@ -76,7 +74,7 @@ function SortableRow({ t, onUpdate, onDelete }) {
       <td className="py-4 px-3 hidden sm:table-cell w-28">
         <button
           onClick={() => { const next = PRIORITY_CYCLE[(PRIORITY_CYCLE.indexOf(p)+1)%4]; onUpdate(t.id,'priority',next); }}
-          className={`text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full border transition-all flex items-center gap-1.5 ${ps.bg} ${ps.text} ${ps.border}`}>
+          className={`text-[10px] font-black uppercase tracking-wider px-3 py-1.5 rounded-full border transition-all inline-flex items-center gap-1.5 ${ps.bg} ${ps.text} ${ps.border}`}>
           <span style={{ color: ps.dot }}>●</span> {p}
         </button>
       </td>
@@ -86,7 +84,7 @@ function SortableRow({ t, onUpdate, onDelete }) {
         </span>
       </td>
       <td className="py-4 px-3 hidden md:table-cell w-44">
-        <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400 bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-1.5 w-fit">
+        <div className="inline-flex items-center gap-2 text-[11px] font-bold text-slate-400 bg-white/[0.04] border border-white/[0.08] rounded-xl px-3 py-1.5">
           <Calendar size={12} className="text-slate-600" />
           <input type="date" value={t.deadline||''} onChange={e => onUpdate(t.id,'deadline',e.target.value)}
             className="bg-transparent outline-none text-inherit [color-scheme:dark] cursor-pointer" />
@@ -105,14 +103,18 @@ function AddRow({ onAdd }) {
   const [name, setName] = useState('');
   const submit = () => { if (!name.trim()) return; onAdd(name.trim()); setName(''); };
   return (
-    <tr className="border-b border-white/[0.03]">
-      <td colSpan={2} className="py-3 pl-6">
+    <tr>
+      <td className="py-3 pl-6 w-10">
         <Plus size={14} className="text-slate-700 mx-auto" />
       </td>
-      <td colSpan={6} className="py-3 pr-4">
-        <input value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key==='Enter'&&submit()}
+      <td colSpan={7} className="py-3 pr-4">
+        <input
+          value={name}
+          onChange={e => setName(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && submit()}
           placeholder="Add task — press Enter"
-          className="bg-transparent outline-none text-sm text-slate-500 placeholder:text-slate-700 w-full font-medium" />
+          className="bg-transparent outline-none text-sm text-slate-400 placeholder:text-slate-700 w-full font-medium focus:text-white transition-colors"
+        />
       </td>
     </tr>
   );
@@ -157,15 +159,15 @@ const ChartTip = ({ active, payload, label }) => {
 };
 
 export default function App() {
-  const [tasks, setTasks]         = useState([]);
-  const [subjects, setSubjects]   = useState([]);
-  const [studyLogs, setStudyLogs] = useState([]);
-  const [activeTab, setActiveTab] = useState('tasks');
-  const [loading, setLoading]     = useState(true);
+  const [tasks, setTasks]             = useState([]);
+  const [subjects, setSubjects]       = useState([]);
+  const [studyLogs, setStudyLogs]     = useState([]);
+  const [activeTab, setActiveTab]     = useState('tasks');
+  const [loading, setLoading]         = useState(true);
   const [isListening, setIsListening] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(25*60);
-  const [isActive, setIsActive]   = useState(false);
-  const [addingSubject, setAddingSubject] = useState(false);
+  const [isActive, setIsActive]       = useState(false);
+  const [addingSubject, setAddingSubject]   = useState(false);
   const [newSubjectName, setNewSubjectName] = useState('');
   const [newSubjectTotal, setNewSubjectTotal] = useState(10);
 
@@ -174,7 +176,7 @@ export default function App() {
   const fetchData = useCallback(async () => {
     const [{ data: tData }, { data: sData }, { data: lData }] = await Promise.all([
       supabase.from('tasks').select('*'),
-      supabase.from('subjects').select('*').order('name',{ ascending:true }),
+      supabase.from('subjects').select('*').order('name', { ascending: true }),
       supabase.from('study_sessions').select('*'),
     ]);
     if (tData) setTasks(tData);
@@ -189,7 +191,8 @@ export default function App() {
     let iv = null;
     if (isActive && secondsLeft > 0) iv = setInterval(() => setSecondsLeft(s => s-1), 1000);
     else if (isActive && secondsLeft === 0) {
-      supabase.from('study_sessions').insert([{ duration_minutes:25, completed_at:new Date().toISOString() }])
+      supabase.from('study_sessions')
+        .insert([{ duration_minutes: 25, completed_at: new Date().toISOString() }])
         .then(() => { setIsActive(false); setSecondsLeft(25*60); fetchData(); });
     }
     return () => clearInterval(iv);
@@ -207,7 +210,8 @@ export default function App() {
 
   const addTask = useCallback(async (name) => {
     const { data } = await supabase.from('tasks')
-      .insert([{ name, status:'To Do', priority:'MEDIUM', deadline:new Date().toLocaleDateString('en-CA') }]).select();
+      .insert([{ name, status:'To Do', priority:'MEDIUM', deadline: new Date().toLocaleDateString('en-CA') }])
+      .select();
     if (data) setTasks(prev => [...prev, ...data]);
   }, []);
 
@@ -231,7 +235,8 @@ export default function App() {
   const addSubject = useCallback(async () => {
     if (!newSubjectName.trim()) return;
     const { data } = await supabase.from('subjects')
-      .insert([{ name:newSubjectName.trim(), completed_modules:0, total_modules:newSubjectTotal }]).select();
+      .insert([{ name: newSubjectName.trim(), completed_modules: 0, total_modules: newSubjectTotal }])
+      .select();
     if (data) setSubjects(prev => [...prev,...data].sort((a,b) => a.name.localeCompare(b.name)));
     setNewSubjectName(''); setNewSubjectTotal(10); setAddingSubject(false);
   }, [newSubjectName, newSubjectTotal]);
@@ -240,8 +245,8 @@ export default function App() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) return alert('Voice input not supported.');
     const r = new SR();
-    r.onstart = () => setIsListening(true);
-    r.onend   = () => setIsListening(false);
+    r.onstart  = () => setIsListening(true);
+    r.onend    = () => setIsListening(false);
     r.onresult = async e => { await addTask(e.results[0][0].transcript); };
     r.start();
   };
@@ -250,7 +255,7 @@ export default function App() {
     const last7 = [...Array(7)].map((_,i) => { const d=new Date(); d.setDate(d.getDate()-(6-i)); return d.toLocaleDateString('en-CA'); });
     return last7.map(d => ({
       date: d.slice(5).replace('-','/'),
-      mins: studyLogs.filter(l => l.completed_at?.startsWith(d)).reduce((s,l) => s+(l.duration_minutes||0), 0)
+      mins: studyLogs.filter(l => l.completed_at?.startsWith(d)).reduce((s,l) => s+(l.duration_minutes||0), 0),
     }));
   }, [studyLogs]);
 
@@ -258,7 +263,7 @@ export default function App() {
     subjects.map(s => ({ name:s.name, p:s.total_modules>0 ? Math.round((s.completed_modules/s.total_modules)*100) : 0 })),
   [subjects]);
 
-  const totalMins      = useMemo(() => studyLogs.reduce((s,l) => s+(l.duration_minutes||0),0), [studyLogs]);
+  const totalMins      = useMemo(() => studyLogs.reduce((s,l) => s+(l.duration_minutes||0), 0), [studyLogs]);
   const completedTasks = tasks.filter(t => t.status==='Completed').length;
   const inProgress     = tasks.filter(t => t.status==='In Progress').length;
   const highPriority   = tasks.filter(t => ['HIGH','URGENT'].includes(t.priority?.toUpperCase())).length;
@@ -283,10 +288,10 @@ export default function App() {
         {activeTab==='tasks' && (
           <div className="flex flex-wrap gap-3 mb-6">
             {[
-              { label:'Total',        value:tasks.length,   color:'bg-slate-800 border-slate-700 text-slate-300' },
-              { label:'In Progress',  value:inProgress,     color:'bg-amber-900/40 border-amber-600/40 text-amber-400' },
-              { label:'High Priority',value:highPriority,   color:'bg-red-900/40 border-red-600/40 text-red-400' },
-              { label:'Completed',    value:completedTasks, color:'bg-emerald-900/40 border-emerald-600/40 text-emerald-400' },
+              { label:'Total',         value:tasks.length,   color:'bg-slate-800 border-slate-700 text-slate-300' },
+              { label:'In Progress',   value:inProgress,     color:'bg-amber-900/40 border-amber-600/40 text-amber-400' },
+              { label:'High Priority', value:highPriority,   color:'bg-red-900/40 border-red-600/40 text-red-400' },
+              { label:'Completed',     value:completedTasks, color:'bg-emerald-900/40 border-emerald-600/40 text-emerald-400' },
             ].map(s => (
               <div key={s.label} className={`flex items-center gap-3 px-4 py-2.5 rounded-2xl border ${s.color}`}>
                 <span className="text-2xl font-black">{s.value}</span>
@@ -318,20 +323,19 @@ export default function App() {
                 ))}
               </tr>
             </thead>
-            <tbody>
-              {tasks.length===0 && (
-                <tr><td colSpan={8} className="py-20 text-center text-slate-700">
-                  <Circle size={36} className="mx-auto mb-3 opacity-20" strokeWidth={1} />
-                  <p className="font-bold text-sm">No tasks yet — type below to add one</p>
-                </td></tr>
-              )}
-              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={tasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+                <tbody>
+                  {tasks.length===0 && (
+                    <tr><td colSpan={8} className="py-20 text-center text-slate-700">
+                      <p className="font-bold text-sm">No tasks yet — type below to add one</p>
+                    </td></tr>
+                  )}
                   {tasks.map(t => <SortableRow key={t.id} t={t} onUpdate={updateTask} onDelete={deleteTask} />)}
-                </SortableContext>
-              </DndContext>
-              <AddRow onAdd={addTask} />
-            </tbody>
+                  <AddRow onAdd={addTask} />
+                </tbody>
+              </SortableContext>
+            </DndContext>
           </table>
 
           <div className="fixed bottom-8 right-8 z-50">
@@ -410,7 +414,7 @@ export default function App() {
                 <div className="mb-4 p-4 bg-white/[0.04] border border-white/[0.08] rounded-2xl space-y-3">
                   <input autoFocus placeholder="Subject name" value={newSubjectName}
                     onChange={e => setNewSubjectName(e.target.value)}
-                    onKeyDown={e => e.key==='Enter'&&addSubject()}
+                    onKeyDown={e => e.key==='Enter' && addSubject()}
                     className="bg-transparent outline-none text-sm text-white placeholder:text-slate-600 w-full border-b border-white/10 pb-1" />
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-slate-600">Total modules:</span>
