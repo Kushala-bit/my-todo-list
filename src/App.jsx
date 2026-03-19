@@ -67,10 +67,29 @@ export default function App() {
     setLoading(false);
   }
 
-  // REFRESH AFTER UPDATE
+  const startVoiceInput = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return alert("Browser not supported");
+    const recognition = new SpeechRecognition();
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onresult = async (event) => {
+      const text = event.results[0][0].transcript;
+      await supabase.from('tasks').insert([{ 
+        name: text, 
+        status: 'To Do', 
+        priority: 'MEDIUM', 
+        deadline: new Date().toISOString().split('T')[0],
+        position: tasks.length 
+      }]);
+      fetchData();
+    };
+    recognition.start();
+  };
+
   const updateTaskField = async (id, field, value) => {
     await supabase.from('tasks').update({ [field]: value }).eq('id', id);
-    fetchData(); 
+    fetchData();
   };
 
   const cyclePriority = (id, cur) => {
@@ -81,14 +100,12 @@ export default function App() {
   const addTask = async () => {
     const name = prompt("New Task?");
     if (!name) return;
-    const { error } = await supabase.from('tasks').insert([{ 
-        name, 
-        status: 'To Do', 
-        priority: 'MEDIUM', 
-        deadline: new Date().toISOString().split('T')[0],
-        position: tasks.length 
+    await supabase.from('tasks').insert([{ 
+      name, status: 'To Do', priority: 'MEDIUM', 
+      deadline: new Date().toISOString().split('T')[0], 
+      position: tasks.length 
     }]);
-    if (!error) fetchData(); // Refresh UI
+    fetchData();
   };
 
   const deleteTask = async (id) => {
@@ -138,6 +155,7 @@ export default function App() {
         </div>
         {activeTab === 'tasks' && (
           <div className="flex gap-3">
+             <button onClick={startVoiceInput} className={`p-4 rounded-2xl transition-all shadow-lg ${isListening ? 'bg-red-600 animate-pulse' : 'bg-purple-600 shadow-purple-600/20'}`}><Mic size={28} strokeWidth={3} /></button>
              <button onClick={addTask} className="bg-blue-600 text-white p-4 rounded-2xl shadow-xl active:scale-95 transition-all"><Plus size={28} strokeWidth={4} /></button>
           </div>
         )}
@@ -162,14 +180,14 @@ export default function App() {
 
       {activeTab === 'study' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 min-h-[450px]">
+          <div className="bg-white/5 p-8 rounded-[2.5rem] border border-white/5 h-[450px]">
             <h2 className="text-xl font-black text-white italic mb-8 uppercase flex items-center gap-2"><BookOpen className="text-purple-500" /> SUBJECTS</h2>
             <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
               {subjects.map(s => (
                 <div key={s.id} className="bg-[#1a1a1a] p-5 rounded-2xl border border-white/5 flex items-center justify-between">
                   <div className="flex-1 mr-6">
                     <h3 className="text-lg font-black text-slate-200 uppercase">{s.name}</h3>
-                    <div className="w-full bg-white/5 h-2 rounded-full mt-2 overflow-hidden"><div className="bg-purple-500 h-full transition-all" style={{ width: `${(s.completed_modules/s.total_modules)*100}%` }}></div></div>
+                    <div className="w-full bg-white/5 h-2 rounded-full mt-2 overflow-hidden"><div className="bg-purple-500 h-full" style={{ width: `${(s.completed_modules/s.total_modules)*100}%` }}></div></div>
                   </div>
                   <div className="flex gap-2">
                     <input type="number" value={s.completed_modules} onChange={(e) => supabase.from('subjects').update({ completed_modules: parseInt(e.target.value) }).eq('id', s.id).then(() => fetchData())} className="bg-white/10 w-12 text-center rounded text-purple-400 font-bold p-1" />
