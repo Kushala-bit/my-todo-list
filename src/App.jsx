@@ -64,6 +64,7 @@ export default function App() {
     recognition.continuous = false;
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
+    recognition.lang = 'en-IN';
     let fired = false;
     recognition.onstart = () => setIsListening(true);
     recognition.onend = () => setIsListening(false);
