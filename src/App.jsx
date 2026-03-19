@@ -61,9 +61,15 @@ export default function App() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) return alert("Browser not supported");
     const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    let fired = false;
     recognition.onstart = () => setIsListening(true);
     recognition.onend = () => setIsListening(false);
     recognition.onresult = async (event) => {
+      if (fired) return;
+      fired = true;
       const text = event.results[0][0].transcript;
       const { data } = await supabase.from('tasks').insert([{ name: text, status: 'To Do', priority: 'MEDIUM', deadline: new Date().toLocaleDateString('en-CA') }]).select();
       if (data) setTasks(prev => [...prev, data[0]]);
