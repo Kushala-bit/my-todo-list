@@ -63,7 +63,7 @@ export default function App() {
     const recognition = new SpeechRecognition();
     recognition.continuous = false;
     recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
+    recognition.maxAlternatives = 3;
     recognition.lang = 'en-IN';
     let fired = false;
     recognition.onstart = () => setIsListening(true);
@@ -71,8 +71,12 @@ export default function App() {
     recognition.onresult = async (event) => {
       if (fired) return;
       fired = true;
-      const text = event.results[0][0].transcript;
-      const { data } = await supabase.from('tasks').insert([{ name: text, status: 'To Do', priority: 'MEDIUM', deadline: new Date().toLocaleDateString('en-CA') }]).select();
+      let best = '';
+      for (let i = 0; i < event.results[0].length; i++) {
+        const t = event.results[0][i].transcript;
+        if (t.length > best.length) best = t;
+      }
+      const { data } = await supabase.from('tasks').insert([{ name: best, status: 'To Do', priority: 'MEDIUM', deadline: new Date().toLocaleDateString('en-CA') }]).select();
       if (data) setTasks(prev => [...prev, data[0]]);
     };
     recognition.start();
